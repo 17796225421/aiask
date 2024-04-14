@@ -64,7 +64,7 @@ function openAndArrangeWindows() {
         windows.forEach(function(window) {
             window.tabs.forEach(function(tab) {
                 // 检查是否是我们需要的窗口
-                if (tab.url === 'https://poe.com/Claude-3-Opus-200k' || tab.url === 'https://poe.com/GPT-4-32k') {
+                if (tab.url === 'https://chat.yoyochatgpt.com/?model=gpt-4' || tab.url === 'https://www.perplexity.ai/') {
                     // 是的话就关闭
                     chrome.windows.remove(window.id);
                 }
@@ -77,23 +77,22 @@ function openAndArrangeWindows() {
 
     // 创建第一个窗口，并保存引用
     chrome.windows.create({
-        url: 'https://poe.com/Claude-3-Opus-200k',
+        url: 'https://chat.yoyochatgpt.com/?model=gpt-4',
         type: 'popup',
-        left:outerWidth/2,
+        left: Math.round(outerWidth / 2),
         top: 0,
-        width: outerWidth / 4 * 1.05,
+        width: Math.round(outerWidth / 4 * 1.05),
         height: outerHeight
     }, function (win) {
         window1 = win;
     });
 
-    // 创建第二个窗口，并保存引用
     chrome.windows.create({
-        url: 'https://poe.com/GPT-4-32k',
+        url: 'https://www.perplexity.ai/',
         type: 'popup',
-        left: outerWidth/4*3,
+        left: Math.round(outerWidth / 4 * 3),
         top: 0,
-        width: outerWidth / 4 * 1.05,
+        width: Math.round(outerWidth / 4 * 1.05),
         height: outerHeight
     }, function (win) {
         window2 = win;
