@@ -64,7 +64,7 @@ function openAndArrangeWindows() {
         windows.forEach(function(window) {
             window.tabs.forEach(function(tab) {
                 // 检查是否是我们需要的窗口
-                if (tab.url === 'https://chat.yoyochatgpt.com/?model=gpt-4' || tab.url === 'https://www.perplexity.ai/') {
+                if (tab.url === 'https://ai.yoyogpt.online/' || tab.url === 'https://chatkit.app/?chat=1zwayr1wahbr5x#') {
                     // 是的话就关闭
                     chrome.windows.remove(window.id);
                 }
@@ -77,7 +77,7 @@ function openAndArrangeWindows() {
 
     // 创建第一个窗口，并保存引用
     chrome.windows.create({
-        url: 'https://chat.yoyochatgpt.com/?model=gpt-4',
+        url: 'https://ai.yoyogpt.online/',
         type: 'popup',
         left: Math.round(outerWidth / 2),
         top: 0,
@@ -88,7 +88,7 @@ function openAndArrangeWindows() {
     });
 
     chrome.windows.create({
-        url: 'https://www.perplexity.ai/',
+        url: 'https://chatkit.app/?chat=1zwayr1wahbr5x#',
         type: 'popup',
         left: Math.round(outerWidth / 4 * 3),
         top: 0,
@@ -112,3 +112,4 @@ function openAndArrangeWindows() {
         }
     });
 }
+
