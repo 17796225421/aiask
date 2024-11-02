@@ -4,14 +4,53 @@
     <title>Chrome Extension Popup</title>
     <meta charset="UTF-8">
     <style>
+        /* 保留原有样式 */
         body {
-            width: 760px; /* 设置宽度 */
-            height: 580px; /* 设置高度 */
+            width: 760px;
+            height: 580px;
         }
         #buttonContainer {
-            position: sticky; /* 使容器在滚动时保持在顶部 */
-            top: 0; /* 距离顶部的距离 */
-            z-index: 1000; /* 确保按钮在其他元素之上 */
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            padding: 8px 0;
+        }
+        .tab-container {
+            display: flex;
+            margin-left: 8px;
+            overflow-x: auto;
+            flex: 1;
+        }
+        .tab {
+            padding: 4px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 4px;
+            cursor: pointer;
+            background-color: #f5f5f5;
+            position: relative; /* 添加相对定位 */
+            display: flex;
+            align-items: center;
+        }
+        .tab.active {
+            background-color: #e0e0e0;
+        }
+        /* 添加删除按钮样式 */
+        .tab-close {
+            display: none;
+            color: #ff0000;
+        }
+        .tab:hover .tab-close {
+            display: inline-block;
+        }
+        .add-tab {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
         }
     </style>
 </head>
@@ -22,9 +61,13 @@
         <button id="searchButton">搜索</button>
         <button id="switchClaude">切换Claude</button>
         <button id="switchGpt">切换GPT</button>
+        <div class="tab-container" id="tabContainer"></div>
+        <button class="add-tab" id="addTab">+</button>
     </div>
-    <label for="specificIssues"></label>
-    <textarea id="specificIssues" rows="100" cols="100"></textarea>
+    <div class="textarea-container">
+        <label for="specificIssues"></label>
+        <textarea id="specificIssues" rows="100" cols="100"></textarea>
+    </div>
 </div>
 
 <script src="popup.js"></script>

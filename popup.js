@@ -20,6 +20,9 @@ const ALTERNATE_CLAUDE_URLS = [
     'https://c.azs.ai',
 ];
 
+let currentTabId = 0;
+let questionDetailDataMap = {};
+
 // 初始化 CHAT_URLS 和 SEARCH_URLS
 function updateUrls() {
     const isGptAlternate = localStorage.getItem('isGptAlternate') === 'true';
@@ -52,6 +55,7 @@ let isClosingWindows = false;
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
+    initializeTabSystem();
     initializeTextArea();
     initializeAskButton();
     initializeSearchButton();
@@ -88,9 +92,8 @@ function initializeSwitchButtons() {
 function initializeTextArea() {
     const specificIssues = document.getElementById('specificIssues');
 
-    // 恢复保存的数据
-    const savedData = JSON.parse(localStorage.getItem('questionDetailData') || '{}');
-    specificIssues.value = savedData.specificIssues || '';
+    // 恢复当前标签页的数据
+    specificIssues.value = questionDetailDataMap[currentTabId]?.specificIssues || '';
 
     // 监听变化并保存
     specificIssues.addEventListener('input', () => {
@@ -99,7 +102,6 @@ function initializeTextArea() {
 
     // 监听粘贴事件
     specificIssues.addEventListener('paste', (event) => {
-        // 在粘贴后延迟调整大小
         setTimeout(() => resizeTextArea(specificIssues), 0);
     });
 
@@ -124,24 +126,155 @@ function resizeTextArea(textarea) {
     textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
+function initializeTabSystem() {
+    // 初始化 tabId
+    let savedTabId = localStorage.getItem('tabId');
+    if (savedTabId === null) {
+        localStorage.setItem('tabId', '0');
+    }
+
+    // 初始化 questionDetailDataMap
+    const savedMap = localStorage.getItem('questionDetailDataMap');
+    if (savedMap) {
+        questionDetailDataMap = JSON.parse(savedMap);
+    }
+
+    // 如果没有任何标签页，创建第一个
+    if (Object.keys(questionDetailDataMap).length === 0) {
+        const initialTabId = localStorage.getItem('tabId');
+        questionDetailDataMap[initialTabId] = {
+            specificIssues: ''
+        };
+        saveQuestionDetailDataMap();
+    }
+
+    // 渲染标签页
+    renderTabs();
+
+    // 设置新增标签页的点击事件
+    document.getElementById('addTab').addEventListener('click', addNewTab);
+}
+
+function renderTabs() {
+    const tabContainer = document.getElementById('tabContainer');
+    tabContainer.innerHTML = '';
+
+    Object.keys(questionDetailDataMap).forEach(tabId => {
+        const tab = document.createElement('div');
+        tab.className = `tab ${tabId === currentTabId.toString() ? 'active' : ''}`;
+
+        // 创建标签文本容器
+        const tabText = document.createElement('span');
+        tabText.textContent = `聊天 ${parseInt(tabId) + 1}`;
+        tab.appendChild(tabText);
+
+        // 创建关闭按钮
+        const closeButton = document.createElement('span');
+        closeButton.className = 'tab-close';
+        closeButton.innerHTML = '×';
+        closeButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡
+            deleteTab(tabId);
+        });
+        tab.appendChild(closeButton);
+
+        tab.dataset.tabId = tabId;
+        tab.addEventListener('click', () => switchTab(tabId));
+        tabContainer.appendChild(tab);
+    });
+}
+
+
+function switchTab(tabId) {
+    currentTabId = tabId;
+    const textarea = document.getElementById('specificIssues');
+    textarea.value = questionDetailDataMap[tabId].specificIssues || '';
+    renderTabs();
+    resizeTextArea(textarea);
+}
+// 修改 addNewTab 函数来查找未使用的 tabId
+function addNewTab() {
+    // 获取所有已使用的 tabId
+    const usedTabIds = new Set(Object.keys(questionDetailDataMap).map(id => parseInt(id)));
+
+    // 在 0-4 范围内找到第一个未使用的 tabId
+    let newTabId = 0;
+    while (newTabId < 5) {
+        if (!usedTabIds.has(newTabId)) {
+            break;
+        }
+        newTabId++;
+    }
+
+    // 如果所有 ID 都被使用了，返回
+    if (newTabId >= 5) {
+        alert('已达到最大标签页数量限制(5)');
+        return;
+    }
+
+    // 保存新的 tabId
+    localStorage.setItem('tabId', newTabId.toString());
+
+    // 初始化新标签页的数据
+    questionDetailDataMap[newTabId] = {
+        specificIssues: ''
+    };
+
+    // 切换到新标签页
+    currentTabId = newTabId.toString();
+    saveQuestionDetailDataMap();
+    renderTabs();
+
+    // 清空输入框
+    const textarea = document.getElementById('specificIssues');
+    textarea.value = '';
+    resizeTextArea(textarea);
+}
+
+function saveQuestionDetailDataMap() {
+    localStorage.setItem('questionDetailDataMap', JSON.stringify(questionDetailDataMap));
+}
+
 function saveData() {
-    const dataToSave = {
+    questionDetailDataMap[currentTabId] = {
         specificIssues: document.getElementById('specificIssues').value
     };
-    localStorage.setItem('questionDetailData', JSON.stringify(dataToSave));
+    saveQuestionDetailDataMap();
+}
+
+function deleteTab(tabId) {
+    // 如果只剩一个标签页，不允许删除
+    if (Object.keys(questionDetailDataMap).length <= 1) {
+        return;
+    }
+
+    // 删除数据
+    delete questionDetailDataMap[tabId];
+    saveQuestionDetailDataMap();
+
+    // 如果删除的是当前标签页，切换到其他标签页
+    if (tabId === currentTabId.toString()) {
+        const remainingTabs = Object.keys(questionDetailDataMap);
+        currentTabId = remainingTabs[0];
+        const textarea = document.getElementById('specificIssues');
+        textarea.value = questionDetailDataMap[currentTabId].specificIssues || '';
+        resizeTextArea(textarea);
+    }
+
+    // 重新渲染标签页
+    renderTabs();
 }
 
 async function askAllDataToClipboard(urls) {
     try {
-        const questionData = JSON.parse(localStorage.getItem('questionDetailData') || '{}');
-        await navigator.clipboard.writeText(questionData.specificIssues || '');
+        const currentData = questionDetailDataMap[currentTabId] || {};
+        await navigator.clipboard.writeText(currentData.specificIssues || '');
         console.log('内容已复制到剪贴板');
         openAndArrangeWindows(urls);
     } catch (err) {
         console.error('复制失败:', err);
     }
 }
-
 function openAndArrangeWindows(urls) {
     createdWindowIds.clear();
     isClosingWindows = false;
