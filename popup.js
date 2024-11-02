@@ -1,115 +1,173 @@
-// 当页面加载完毕时，从 localStorage 中获取数据并显示在输入框中
-document.addEventListener('DOMContentLoaded', function () {
-    let specificIssues = document.getElementById('specificIssues');
+const CHAT_URLS = [
+    'https://claude.yoyogpt.online/',
+    'https://chat.aite.lol/?model=o1-preview',
+    'https://chat.aite.lol/?model=gpt-4o-canmore',
+    'https://chat.aite.lol/?model=o1-mini',
+    'https://claude.yoyogpt.online/',
+    'https://www.perplexity.ai/collections/1-qafGU1j_SySk1dumrnEhfg',
+    'https://www.perplexity.ai/collections/perplexity-It9ohRwgQN.muqHyiZr..w',
+];
 
-    // 动态调整输入框大小
-    [specificIssues].forEach(textarea => {
-        textarea.addEventListener('focus', () => resizeTextArea(textarea));
-        textarea.addEventListener('input', () => resizeTextArea(textarea));
-    });
+// https://chat.aite.lol
+// https://www.gptai.cc
 
-    // 从 localStorage 中恢复数据
-    let savedData = localStorage.getItem('questionDetailData');
-    if (savedData) {
-        savedData = JSON.parse(savedData);
-        specificIssues.value = savedData.specificIssues || '';
-    }
+// https://cn.claudesvip.top
+// https://claude.yoyogpt.online
 
-    // 监听输入框的变化并实时保存数据
-    specificIssues.addEventListener('input', saveData);
+// 存储所有已创建窗口的ID
+let createdWindowIds = new Set();
+// 标记是否正在进行关闭操作
+let isClosingWindows = false;
 
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTextArea();
+    initializeAskButton();
 });
 
-// 直接为复制按钮绑定复制功能的事件监听器
-document.getElementById('copyButton').addEventListener('click', copyAllDataToClipboard);
+function initializeTextArea() {
+    const specificIssues = document.getElementById('specificIssues');
 
-function resizeTextArea(textarea) {
-    // 重置高度，以便可以缩小如果文本行减少
-    textarea.style.height = 'auto';
-    // 根据内容的滚动高度来调整文本区域的高度
-    textarea.style.height = textarea.scrollHeight + 'px';
+    // 恢复保存的数据
+    const savedData = JSON.parse(localStorage.getItem('questionDetailData') || '{}');
+    specificIssues.value = savedData.specificIssues || '';
+
+    // 监听变化并保存
+    specificIssues.addEventListener('input', saveData);
+
+    // 初始调整大小
+    resizeTextArea(specificIssues);
 }
 
-// 保存数据到 localStorage
+function initializeAskButton() {
+    document.getElementById('askButton').addEventListener('click', askAllDataToClipboard);
+}
+
+function resizeTextArea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
 function saveData() {
-    let dataToSave = {
-        specificIssues: document.getElementById('specificIssues').value,
+    const dataToSave = {
+        specificIssues: document.getElementById('specificIssues').value
     };
     localStorage.setItem('questionDetailData', JSON.stringify(dataToSave));
 }
 
-
-function copyAllDataToClipboard() {
-    // 获取localStorage中的所有数据
-    let questionData = JSON.parse(localStorage.getItem('questionDetailData')) || {};
-
-    let combinedData =
-        `${questionData.specificIssues || ''}`
-    // 复制到剪贴板
-    navigator.clipboard.writeText(combinedData).then(function () {
-        console.log('内容已复制到粘贴板');
-
-        openAndArrangeWindows(); // 假设这就是您想要执行的函数
-
-    }, function (err) {
-        console.error('无法复制内容: ', err);
-    });
+async function askAllDataToClipboard() {
+    try {
+        const questionData = JSON.parse(localStorage.getItem('questionDetailData') || '{}');
+        await navigator.clipboard.writeText(questionData.specificIssues || '');
+        console.log('内容已复制到剪贴板');
+        openAndArrangeWindows();
+    } catch (err) {
+        console.error('复制失败:', err);
+    }
 }
 
 function openAndArrangeWindows() {
-    let window1, window2;
+    // 重置状态
+    createdWindowIds.clear();
+    isClosingWindows = false;
 
-    // 获取所有窗口
-    chrome.windows.getAll({populate: true}, function(windows) {
-        windows.forEach(function(window) {
-            window.tabs.forEach(function(tab) {
-                // 检查是否是我们需要的窗口
-                if (tab.url === 'https://ai.yoyogpt.online/' || tab.url === 'https://chatkit.app/?chat=1zwayr1wahbr5x#') {
-                    // 是的话就关闭
-                    chrome.windows.remove(window.id);
-                }
-            });
-        });
-    });
+    // 首先关闭所有现有的相关窗口
+    chrome.windows.getAll({ populate: true }, async function(existingWindows) {
+        const closingPromises = existingWindows
+            .filter(window => window.tabs.some(tab => CHAT_URLS.includes(tab.url)))
+            .map(window => new Promise(resolve => {
+                chrome.windows.remove(window.id, resolve);
+            }));
 
-    const outerWidth = screen.width;
-    const outerHeight = screen.height;
-
-    // 创建第一个窗口，并保存引用
-    chrome.windows.create({
-        url: 'https://ai.yoyogpt.online/',
-        type: 'popup',
-        left: Math.round(outerWidth / 2),
-        top: 0,
-        width: Math.round(outerWidth / 4 * 1.05),
-        height: outerHeight
-    }, function (win) {
-        window1 = win;
-    });
-
-    chrome.windows.create({
-        url: 'https://chatkit.app/?chat=1zwayr1wahbr5x#',
-        type: 'popup',
-        left: Math.round(outerWidth / 4 * 3),
-        top: 0,
-        width: Math.round(outerWidth / 4 * 1.05),
-        height: outerHeight
-    }, function (win) {
-        window2 = win;
-    });
-
-    // 监听第一个窗口的关闭事件
-    chrome.windows.onRemoved.addListener(function (windowId) {
-        if (windowId === window1.id && window2) {
-            chrome.windows.remove(window2.id);
-        }
-    });
-
-    // 监听第二个窗口的关闭事件
-    chrome.windows.onRemoved.addListener(function (windowId) {
-        if (windowId === window2.id && window1) {
-            chrome.windows.remove(window1.id);
-        }
+        await Promise.all(closingPromises);
+        createNewWindows();
     });
 }
 
+function createNewWindows() {
+    const screenMetrics = calculateScreenMetrics();
+
+    CHAT_URLS.forEach((url, index) => {
+        const position = calculateWindowPosition(index, screenMetrics);
+        chrome.windows.create({
+            url: url,
+            type: 'popup',
+            ...position
+        }, function(window) {
+            if (window) {
+                createdWindowIds.add(window.id);
+                setupWindowListeners(window.id);
+            }
+        });
+    });
+}
+
+function calculateScreenMetrics() {
+    const outerWidth = screen.width;
+    const outerHeight = screen.height;
+    const baseWidth = Math.round(outerWidth / CHAT_URLS.length);
+    const extraWidth = Math.round(baseWidth * 0.3);
+
+    return {
+        windowWidth: baseWidth + extraWidth,
+        overlap: extraWidth,
+        height: outerHeight
+    };
+}
+
+function calculateWindowPosition(index, metrics) {
+    return {
+        left: index * (metrics.windowWidth - metrics.overlap),
+        top: 0,
+        width: metrics.windowWidth,
+        height: metrics.height
+    };
+}
+
+function setupWindowListeners(windowId) {
+    // 监听窗口状态变化
+    chrome.windows.onRemoved.addListener(handleWindowRemoval);
+    chrome.windows.onFocusChanged.addListener(handleWindowFocus);
+}
+
+function handleWindowRemoval(closedWindowId) {
+    if (isClosingWindows || !createdWindowIds.has(closedWindowId)) {
+        return;
+    }
+
+    isClosingWindows = true;
+    closeAllRelatedWindows(closedWindowId);
+}
+
+function handleWindowFocus(focusedWindowId) {
+    if (focusedWindowId === chrome.windows.WINDOW_ID_NONE) {
+        return;
+    }
+
+    chrome.windows.get(focusedWindowId, { populate: true }, function(window) {
+        if (!window || !window.tabs.some(tab => CHAT_URLS.includes(tab.url))) {
+            return;
+        }
+
+        // 如果焦点窗口是我们的窗口之一，确保它保持在最前面
+        chrome.windows.update(focusedWindowId, { focused: true });
+    });
+}
+
+async function closeAllRelatedWindows(excludeWindowId) {
+    const allWindows = await new Promise(resolve => {
+        chrome.windows.getAll({ populate: true }, resolve);
+    });
+
+    const closingPromises = Array.from(createdWindowIds)
+        .filter(id => id !== excludeWindowId)
+        .map(id => new Promise(resolve => {
+            chrome.windows.remove(id, resolve);
+        }));
+
+    await Promise.all(closingPromises);
+
+    // 重置状态
+    createdWindowIds.clear();
+    isClosingWindows = false;
+}
