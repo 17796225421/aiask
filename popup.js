@@ -1,18 +1,49 @@
-const CHAT_URLS = [
-    'https://claude.yoyogpt.online/',
+const GPT_URLS = [
     'https://chat.aite.lol/?model=o1-preview',
     'https://chat.aite.lol/?model=gpt-4o-canmore',
     'https://chat.aite.lol/?model=o1-mini',
-    'https://claude.yoyogpt.online/',
-    'https://www.perplexity.ai/collections/1-qafGU1j_SySk1dumrnEhfg',
-    'https://www.perplexity.ai/collections/perplexity-It9ohRwgQN.muqHyiZr..w',
 ];
 
-// https://chat.aite.lol
-// https://www.gptai.cc
+const CLAUDE_URLS = [
+    'https://claude.yoyogpt.online/',
+    'https://claude.yoyogpt.online/',
+];
 
-// https://cn.claudesvip.top
-// https://claude.yoyogpt.online
+const ALTERNATE_GPT_URLS = [
+    'https://g.azs.ai/?model=o1-preview',
+    'https://g.azs.ai/?model=gpt-4o-canmore',
+    'https://g.azs.ai/?model=o1-mini',
+];
+
+const ALTERNATE_CLAUDE_URLS = [
+    'https://c.azs.ai',
+    'https://c.azs.ai',
+];
+
+// 初始化 CHAT_URLS 和 SEARCH_URLS
+function updateUrls() {
+    const isGptAlternate = localStorage.getItem('isGptAlternate') === 'true';
+    const isClaudeAlternate = localStorage.getItem('isClaudeAlternate') === 'true';
+
+    // 选择正确的 GPT URLs
+    const currentGptUrls = isGptAlternate ? ALTERNATE_GPT_URLS : GPT_URLS;
+    // 选择正确的 Claude URLs
+    const currentClaudeUrls = isClaudeAlternate ? ALTERNATE_CLAUDE_URLS : CLAUDE_URLS;
+
+    // 更新 CHAT_URLS
+    CHAT_URLS = [
+        ...currentClaudeUrls,
+        ...currentGptUrls,
+    ];
+
+    // 更新 SEARCH_URLS
+    SEARCH_URLS = [
+        'https://www.perplexity.ai/collections/1-qafGU1j_SySk1dumrnEhfg',
+        'https://www.perplexity.ai/collections/perplexity-It9ohRwgQN.muqHyiZr..w',
+        ...currentClaudeUrls,
+        ...currentGptUrls,
+    ];
+}
 
 // 存储所有已创建窗口的ID
 let createdWindowIds = new Set();
@@ -23,7 +54,36 @@ let isClosingWindows = false;
 document.addEventListener('DOMContentLoaded', function() {
     initializeTextArea();
     initializeAskButton();
+    initializeSearchButton();
+    initializeSwitchButtons();
+
+    // 初始化 localStorage 的默认值
+    if (localStorage.getItem('isGptAlternate') === null) {
+        localStorage.setItem('isGptAlternate', 'false');
+    }
+    if (localStorage.getItem('isClaudeAlternate') === null) {
+        localStorage.setItem('isClaudeAlternate', 'false');
+    }
+
+    // 初始更新 URLs
+    updateUrls();
 });
+
+function initializeSwitchButtons() {
+    // 初始化切换 GPT 按钮
+    document.getElementById('switchGpt').addEventListener('click', () => {
+        const currentValue = localStorage.getItem('isGptAlternate') === 'true';
+        localStorage.setItem('isGptAlternate', (!currentValue).toString());
+        updateUrls();
+    });
+
+    // 初始化切换 Claude 按钮
+    document.getElementById('switchClaude').addEventListener('click', () => {
+        const currentValue = localStorage.getItem('isClaudeAlternate') === 'true';
+        localStorage.setItem('isClaudeAlternate', (!currentValue).toString());
+        updateUrls();
+    });
+}
 
 function initializeTextArea() {
     const specificIssues = document.getElementById('specificIssues');
@@ -33,14 +93,30 @@ function initializeTextArea() {
     specificIssues.value = savedData.specificIssues || '';
 
     // 监听变化并保存
-    specificIssues.addEventListener('input', saveData);
+    specificIssues.addEventListener('input', () => {
+        saveData();
+    });
+
+    // 监听粘贴事件
+    specificIssues.addEventListener('paste', (event) => {
+        // 在粘贴后延迟调整大小
+        setTimeout(() => resizeTextArea(specificIssues), 0);
+    });
 
     // 初始调整大小
     resizeTextArea(specificIssues);
 }
 
 function initializeAskButton() {
-    document.getElementById('askButton').addEventListener('click', askAllDataToClipboard);
+    document.getElementById('askButton').addEventListener('click', () => {
+        askAllDataToClipboard(CHAT_URLS);
+    });
+}
+
+function initializeSearchButton() {
+    document.getElementById('searchButton').addEventListener('click', () => {
+        askAllDataToClipboard(SEARCH_URLS);
+    });
 }
 
 function resizeTextArea(textarea) {
@@ -55,39 +131,37 @@ function saveData() {
     localStorage.setItem('questionDetailData', JSON.stringify(dataToSave));
 }
 
-async function askAllDataToClipboard() {
+async function askAllDataToClipboard(urls) {
     try {
         const questionData = JSON.parse(localStorage.getItem('questionDetailData') || '{}');
         await navigator.clipboard.writeText(questionData.specificIssues || '');
         console.log('内容已复制到剪贴板');
-        openAndArrangeWindows();
+        openAndArrangeWindows(urls);
     } catch (err) {
         console.error('复制失败:', err);
     }
 }
 
-function openAndArrangeWindows() {
-    // 重置状态
+function openAndArrangeWindows(urls) {
     createdWindowIds.clear();
     isClosingWindows = false;
 
-    // 首先关闭所有现有的相关窗口
     chrome.windows.getAll({ populate: true }, async function(existingWindows) {
         const closingPromises = existingWindows
-            .filter(window => window.tabs.some(tab => CHAT_URLS.includes(tab.url)))
+            .filter(window => window.tabs.some(tab => urls.includes(tab.url)))
             .map(window => new Promise(resolve => {
                 chrome.windows.remove(window.id, resolve);
             }));
 
         await Promise.all(closingPromises);
-        createNewWindows();
+        createNewWindows(urls);
     });
 }
 
-function createNewWindows() {
-    const screenMetrics = calculateScreenMetrics();
+function createNewWindows(urls) {
+    const screenMetrics = calculateScreenMetrics(urls.length);
 
-    CHAT_URLS.forEach((url, index) => {
+    urls.forEach((url, index) => {
         const position = calculateWindowPosition(index, screenMetrics);
         chrome.windows.create({
             url: url,
@@ -102,10 +176,10 @@ function createNewWindows() {
     });
 }
 
-function calculateScreenMetrics() {
+function calculateScreenMetrics(urlCount) {
     const outerWidth = screen.width;
     const outerHeight = screen.height;
-    const baseWidth = Math.round(outerWidth / CHAT_URLS.length);
+    const baseWidth = Math.round(outerWidth / urlCount);
     const extraWidth = Math.round(baseWidth * 0.3);
 
     return {
@@ -127,7 +201,6 @@ function calculateWindowPosition(index, metrics) {
 function setupWindowListeners(windowId) {
     // 监听窗口状态变化
     chrome.windows.onRemoved.addListener(handleWindowRemoval);
-    chrome.windows.onFocusChanged.addListener(handleWindowFocus);
 }
 
 function handleWindowRemoval(closedWindowId) {
@@ -137,21 +210,6 @@ function handleWindowRemoval(closedWindowId) {
 
     isClosingWindows = true;
     closeAllRelatedWindows(closedWindowId);
-}
-
-function handleWindowFocus(focusedWindowId) {
-    if (focusedWindowId === chrome.windows.WINDOW_ID_NONE) {
-        return;
-    }
-
-    chrome.windows.get(focusedWindowId, { populate: true }, function(window) {
-        if (!window || !window.tabs.some(tab => CHAT_URLS.includes(tab.url))) {
-            return;
-        }
-
-        // 如果焦点窗口是我们的窗口之一，确保它保持在最前面
-        chrome.windows.update(focusedWindowId, { focused: true });
-    });
 }
 
 async function closeAllRelatedWindows(excludeWindowId) {
