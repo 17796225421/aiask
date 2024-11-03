@@ -9,10 +9,15 @@ const CLAUDE_URLS = [
     'https://claude.yoyogpt.online/',
 ];
 
+// const ALTERNATE_GPT_URLS = [
+//     'https://g.azs.ai/?model=o1-preview',
+//     'https://g.azs.ai/?model=gpt-4o-canmore',
+//     'https://g.azs.ai/?model=o1-mini',
+// ];
 const ALTERNATE_GPT_URLS = [
-    'https://g.azs.ai/?model=o1-preview',
-    'https://g.azs.ai/?model=gpt-4o-canmore',
-    'https://g.azs.ai/?model=o1-mini',
+    'https://chatkit.app/?chat=1ptae2rj1pg9io',
+    'https://chatkit.app/?chat=rae8r8yk08fg27',
+    'https://chatkit.app/?chat=ky6z491ycg4kei',
 ];
 
 const ALTERNATE_CLAUDE_URLS = [
@@ -148,11 +153,19 @@ function initializeTabSystem() {
         saveQuestionDetailDataMap();
     }
 
+    // 恢复上次活动的标签页
+    setCurrentTabId(localStorage.getItem('lastActiveTabId') || '0');
+
     // 渲染标签页
     renderTabs();
 
     // 设置新增标签页的点击事件
     document.getElementById('addTab').addEventListener('click', addNewTab);
+
+    // 恢复输入框内容
+    const textarea = document.getElementById('specificIssues');
+    textarea.value = questionDetailDataMap[currentTabId]?.specificIssues || '';
+    resizeTextArea(textarea);
 }
 
 function renderTabs() {
@@ -186,13 +199,12 @@ function renderTabs() {
 
 
 function switchTab(tabId) {
-    currentTabId = tabId;
+    setCurrentTabId(tabId);
     const textarea = document.getElementById('specificIssues');
     textarea.value = questionDetailDataMap[tabId].specificIssues || '';
     renderTabs();
     resizeTextArea(textarea);
 }
-// 修改 addNewTab 函数来查找未使用的 tabId
 function addNewTab() {
     // 获取所有已使用的 tabId
     const usedTabIds = new Set(Object.keys(questionDetailDataMap).map(id => parseInt(id)));
@@ -221,7 +233,8 @@ function addNewTab() {
     };
 
     // 切换到新标签页
-    currentTabId = newTabId.toString();
+    setCurrentTabId(newTabId);
+
     saveQuestionDetailDataMap();
     renderTabs();
 
@@ -255,7 +268,8 @@ function deleteTab(tabId) {
     // 如果删除的是当前标签页，切换到其他标签页
     if (tabId === currentTabId.toString()) {
         const remainingTabs = Object.keys(questionDetailDataMap);
-        currentTabId = remainingTabs[0];
+        setCurrentTabId(remainingTabs[0]);
+
         const textarea = document.getElementById('specificIssues');
         textarea.value = questionDetailDataMap[currentTabId].specificIssues || '';
         resizeTextArea(textarea);
@@ -264,6 +278,7 @@ function deleteTab(tabId) {
     // 重新渲染标签页
     renderTabs();
 }
+
 
 async function askAllDataToClipboard(urls) {
     try {
@@ -361,4 +376,9 @@ async function closeAllRelatedWindows(excludeWindowId) {
     // 重置状态
     createdWindowIds.clear();
     isClosingWindows = false;
+}
+
+function setCurrentTabId(tabId) {
+    currentTabId = tabId.toString();
+    localStorage.setItem('lastActiveTabId', currentTabId);
 }
