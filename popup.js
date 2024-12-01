@@ -5,8 +5,13 @@ const GPT_URLS = [
 ];
 
 const CLAUDE_URLS = [
-    'https://claude.yoyogpt.online/',
-    'https://claude.yoyogpt.online/',
+    'https://kelaode.yoyogpt.online/',
+    'https://kelaode.yoyogpt.online/',
+];
+
+const GEMINI_URLS = [
+    'https://gemini.google.com/app',
+    'https://aistudio.google.com/app/prompts/new_chat?instructions=lmsys-1121&model=gemini-exp-1121',
 ];
 
 // const ALTERNATE_GPT_URLS = [
@@ -18,6 +23,7 @@ const ALTERNATE_GPT_URLS = [
     'https://chatkit.app/?chat=1ptae2rj1pg9io',
     'https://chatkit.app/?chat=rae8r8yk08fg27',
     'https://chatkit.app/?chat=ky6z491ycg4kei',
+    'https://aicnn.cn/chatPage?model=o1-preview',
 ];
 
 const ALTERNATE_CLAUDE_URLS = [
@@ -42,6 +48,7 @@ function updateUrls() {
     CHAT_URLS = [
         ...currentClaudeUrls,
         ...currentGptUrls,
+        ...GEMINI_URLS,
     ];
 
     // 更新 SEARCH_URLS
@@ -50,6 +57,7 @@ function updateUrls() {
         'https://www.perplexity.ai/collections/perplexity-It9ohRwgQN.muqHyiZr..w',
         ...currentClaudeUrls,
         ...currentGptUrls,
+        ...GEMINI_URLS,
     ];
 }
 
