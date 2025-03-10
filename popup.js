@@ -1,29 +1,33 @@
 const GPT_URLS = [
-    'https://chat.aite.lol/?model=o1-preview',
-    'https://chat.aite.lol/?model=gpt-4o-canmore',
-    'https://chat.aite.lol/?model=o1-mini',
+    'https://chatshare.xyz/?model=o1-pro',
+    'https://chatshare.xyz/?model=o1-pro',
+    'https://chatshare.xyz/?model=o1-pro',
+    // 'https://chatshare.xyz/?model=o1-pro',
+    // 'https://chatshare.xyz/?model=o3-mini-high',
+    'https://chatshare.xyz/?model=o3-mini-high',
+    'https://chatshare.xyz/?model=gpt-4-5',
+    // 'https://grok.com/',
+    // 'https://console.volcengine.com/ark/region:ark+cn-beijing/experience/chat',
 ];
 
 const CLAUDE_URLS = [
-    'https://kelaode.yoyogpt.online/',
-    'https://kelaode.yoyogpt.online/',
+    // 'https://kelaode.yoyogpt.online/',
+    // 'https://kelaode.yoyogpt.online/',
+    'https://claude.ai/new',
 ];
 
 const GEMINI_URLS = [
-    'https://gemini.google.com/app',
-    'https://aistudio.google.com/app/prompts/new_chat?instructions=lmsys-1121&model=gemini-exp-1121',
+    // 'https://gemini.google.com/app',
+    // 'https://aistudio.google.com/app/prompts/new_chat?model=gemini-exp-1206',
+    // 'https://gemini.google.com/u/1/app/72d311613c6d838e',
+    // 'https://gemini.google.com/u/1/app/3537f8022957553c',
 ];
 
-// const ALTERNATE_GPT_URLS = [
-//     'https://g.azs.ai/?model=o1-preview',
-//     'https://g.azs.ai/?model=gpt-4o-canmore',
-//     'https://g.azs.ai/?model=o1-mini',
-// ];
 const ALTERNATE_GPT_URLS = [
-    'https://chatkit.app/?chat=1ptae2rj1pg9io',
-    'https://chatkit.app/?chat=rae8r8yk08fg27',
-    'https://chatkit.app/?chat=ky6z491ycg4kei',
-    'https://aicnn.cn/chatPage?model=o1-preview',
+    'https://chat.rawchat.cn/?model=o1-pro',
+    'https://chat.rawchat.cn/?model=o1-pro',
+    'https://chat.rawchat.cn/?model=o1-pro',
+    'https://chat.rawchat.cn/?model=o1-pro',
 ];
 
 const ALTERNATE_CLAUDE_URLS = [
@@ -55,6 +59,7 @@ function updateUrls() {
     SEARCH_URLS = [
         'https://www.perplexity.ai/collections/1-qafGU1j_SySk1dumrnEhfg',
         'https://www.perplexity.ai/collections/perplexity-It9ohRwgQN.muqHyiZr..w',
+        'https://gemini.google.com/immersive/99fe2be3fb5bd218/955d82adf931cde5',
         ...currentClaudeUrls,
         ...currentGptUrls,
         ...GEMINI_URLS,
@@ -291,7 +296,8 @@ function deleteTab(tabId) {
 async function askAllDataToClipboard(urls) {
     try {
         const currentData = questionDetailDataMap[currentTabId] || {};
-        await navigator.clipboard.writeText(currentData.specificIssues || '');
+        const textToCopy = (currentData.specificIssues || '') + '（说中文）';
+        await navigator.clipboard.writeText(textToCopy);
         console.log('内容已复制到剪贴板');
         openAndArrangeWindows(urls);
     } catch (err) {
